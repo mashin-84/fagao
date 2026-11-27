@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f3ee">
+<title>發糕日誌</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+html,body{margin:0;height:100%;background:#f6f3ee;overflow:hidden}
+iframe{position:fixed;inset:0;width:100%;height:100%;border:0;display:block}
+#ld{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:-apple-system,"Noto Sans TC",sans-serif;color:#8a8178;background:#f6f3ee;transition:opacity .3s}
+#ld img{width:72px;height:72px;border-radius:18px}
+#ld a{color:#3d7bd9;font-size:14px;margin-top:24px}
+#ld.hide{opacity:0;pointer-events:none}
+@media (prefers-color-scheme:dark){html,body,#ld{background:#15120f}}
+</style>
+</head>
+<body>
+<iframe id="app" src="https://script.google.com/macros/s/AKfycbwg29KSLkkge2SzZMA1mlB8g46VXMgRI1407oEvhomuzOR9ClO5BumJedCo2_-id-fJcg/exec" allow="clipboard-write"></iframe>
+<div id="ld"><img src="icon-192.png" alt=""><div>載入中…</div>
+<a href="https://script.google.com/macros/s/AKfycbwg29KSLkkge2SzZMA1mlB8g46VXMgRI1407oEvhomuzOR9ClO5BumJedCo2_-id-fJcg/exec" target="_blank" rel="noopener">一直沒出現？點這裡直接開啟／登入</a></div>
+<script>
+const f=document.getElementById('app'),ld=document.getElementById('ld');
+f.addEventListener('load',()=>setTimeout(()=>ld.classList.add('hide'),400));
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
