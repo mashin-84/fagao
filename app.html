@@ -594,7 +594,7 @@ function renderSheet(){
   }
   if(S.sheet==='import'){
     sheet.innerHTML=`<h3>📥 匯入舊資料<button data-a="close">取消</button></h3>
-    <div class="hint" style="margin:0 0 8px">在舊的 Claude 版發糕日誌按「⚙️ → 📦 複製全部資料（搬家用）」，再長按下面的框貼上。重複匯入不會產生重複紀錄。</div>
+    <div class="hint" style="margin:0 0 8px">在舊的 Claude 版按「⚙️ → 📦 搬家用」，一段一段複製過來，每段貼上後按匯入。重複匯入不會產生重複紀錄。</div>
     <textarea class="cp" id="imp" placeholder="貼在這裡"></textarea>
     <div class="actions"><button class="btn" data-a="doimport">匯入</button></div>`;
     return;
@@ -724,14 +724,14 @@ sheet.addEventListener('click',async e=>{
   if(act==='visit'){openSheet('visit');return}
   if(act==='import'){openSheet('import');return}
   if(act==='doimport'){
-    let o;try{o=JSON.parse(document.getElementById('imp').value)}catch(_){toast('內容不對，請重新複製再貼上');return}
+    const raw=document.getElementById('imp').value.trim().replace(/^\uFEFF/,'');let o;try{o=JSON.parse(raw)}catch(_){toast(raw.length?'內容不完整（只收到 '+raw.length+' 字），請重新複製這一段':'還沒貼上內容');return}
     const list=[];for(const k in o.days||{})for(const id in o.days[k]){const j=o.days[k][id];if(!j)continue;let e;try{e=JSON.parse(j)}catch(_){continue}if(!e.t)continue;list.push({id,day:keyOf(new Date(e.t)),json:j,summary:sumText(e)})}
     if(!list.length){toast('沒有可匯入的紀錄');return}
     a.disabled=true;a.textContent='匯入中…（'+list.length+' 筆）';
     try{
       const n=GS?await call('importRows',list):0;
       if(o.cfg&&GS&&!S.cfg.name&&!S.cfg.birth){S.cfg={...S.cfg,...o.cfg};await saveCfg()}
-      closeSheet();toast('匯入 '+n+' 筆');await sync();
+      closeSheet();toast('匯入 '+n+' 筆，可以貼下一段');await sync();
     }catch(err){a.disabled=false;a.textContent='匯入';writeFail(err)}
     return;
   }
