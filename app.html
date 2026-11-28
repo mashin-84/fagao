@@ -41,6 +41,7 @@ input{font:inherit;color:inherit}
 .since .base b{color:var(--ink)}
 .since .nw{white-space:nowrap;display:inline-block}
 .tgbtn{font-size:12px;color:var(--feed);border:1px solid var(--feed);border-radius:999px;padding:2px 9px;margin-left:4px}
+.sharebtn{align-self:flex-start;font-size:13px;color:var(--feed);border:1px solid var(--feed);border-radius:999px;padding:5px 12px}
 .since .why{display:block;font-size:12px;margin-top:2px}
 .since.soon{background:color-mix(in srgb,var(--pee) 16%,var(--card))}.since.soon .big,.since.soon .next b{color:var(--pee)}
 .since.over{background:color-mix(in srgb,var(--danger) 13%,var(--card))}.since.over .big,.since.over .next b{color:var(--danger)}
@@ -252,6 +253,30 @@ function rate(e){
   return {lv,msgs:is.map(x=>x.m),ctx};
 }
 function pwTxt(s){return PW.filter(x=>s.pw[x[0]]>0).map(x=>x[1]+' '+s.pw[x[0]]).join('<br>')}
+function nextInfo(){
+  const feeds=allEntries().filter(e=>e.k==='feed'&&e.t<=Date.now()+6e4),last=feeds[feeds.length-1];
+  if(!last)return null;
+  const w=nextWindow(last),hh=x=>Math.floor(x)+(x%1?'個半':'');
+  return {last,w,A:last.t+w.a*36e5,B:last.t+w.b*36e5,F:last.t+4*36e5,span:`${hh(w.a)}–${hh(w.b)}小時`,ml:w.ml};
+}
+function shareText(){
+  const n=nextInfo(),name=S.cfg.name||'寶寶';if(!n)return '';
+  const now=new Date();
+  return [`🍼 ${name}下一餐`,`約 ${hm(n.A)}–${hm(n.B)}（${n.span}）`,`上一餐：${hm(n.last.t)}${n.ml?' 喝 '+n.ml+' ml':''}`,`最晚：${hm(n.F)}（4 小時）`,`（${now.getMonth()+1}/${now.getDate()} ${hm(now)} 更新）`].join('\n');
+}
+function shareCanvas(){
+  const n=nextInfo(),name=S.cfg.name||'寶寶',W=1080,H=1080,c=document.createElement('canvas');c.width=W;c.height=H;
+  const g=c.getContext('2d'),F='-apple-system,"Noto Sans TC","PingFang TC",sans-serif';
+  g.fillStyle='#f6f3ee';g.fillRect(0,0,W,H);
+  g.fillStyle='#fff';g.beginPath();g.roundRect(60,60,W-120,H-120,48);g.fill();
+  g.textAlign='center';g.fillStyle='#8a8178';g.font=`600 56px ${F}`;g.fillText(`🍼 ${name}下一餐`,W/2,230);
+  g.fillStyle='#3d7bd9';g.font=`800 150px ${F}`;g.fillText(`${hm(n.A)}–${hm(n.B)}`,W/2,450);
+  g.fillStyle='#8a8178';g.font=`500 52px ${F}`;g.fillText(`（${n.span}）`,W/2,540);
+  g.fillStyle='#2b2622';g.font=`600 60px ${F}`;g.fillText(`上一餐 ${hm(n.last.t)}${n.ml?'　喝 '+n.ml+' ml':''}`,W/2,700);
+  g.fillStyle='#c0392b';g.fillText(`最晚 ${hm(n.F)}（4 小時）`,W/2,800);
+  const now=new Date();g.fillStyle='#b0a79c';g.font=`400 40px ${F}`;g.fillText(`${now.getMonth()+1}/${now.getDate()} ${hm(now)} 更新`,W/2,940);
+  return c;
+}
 function badge(lv){return lv==null||lv<0?'':`<span class="bdg b${lv}">${LVN[lv]}</span>`}
 function ratingBox(d){
   const t=new Date((d._date||keyOf(new Date()))+'T'+(d._time||'12:00')).getTime();
@@ -472,7 +497,7 @@ function updateSince(){
   const hh=x=>Math.floor(x)+(x%1?'個半':''), span=`${hh(w.a)}–${hh(w.b)}小時`;
   const nx=st===''?`下一餐約 <b>${hm(A)}–${hm(B)}</b> <span class="rel">（${span}）</span>${four}${why}`:st==='soon'?`<b>該準備喝奶囉！</b>（${hm(A)}–${hm(B)}，${span}）${four}${why}`:`<b>已超過 4 小時</b>（${hm(F)}）${why}`;
   el.className='since '+st;
-  el.innerHTML=`<div class="sinceTop"><div><div class="lbl">距離上次餵奶</div><div class="big">${h?h+' 小時 ':''}${mm} 分</div></div><div class="det">${sameDay?'':md(keyOf(new Date(last.t)))+' '}${hm(last.t)}<br>${esc(d.tt)} ${esc(d.dd.split('　')[0])}</div></div><div class="next">⏰ ${nx}</div>`;
+  el.innerHTML=`<div class="sinceTop"><div><div class="lbl">距離上次餵奶</div><div class="big">${h?h+' 小時 ':''}${mm} 分</div></div><div class="det">${sameDay?'':md(keyOf(new Date(last.t)))+' '}${hm(last.t)}<br>${esc(d.tt)} ${esc(d.dd.split('　')[0])}</div></div><div class="next">⏰ ${nx}</div><button class="sharebtn" data-a="share">📤 傳給家人</button>`;
 }
 
 // ---------- sheet ----------
@@ -599,6 +624,16 @@ function renderSheet(){
     <div class="actions"><button class="btn" data-a="doimport">匯入</button></div>`;
     return;
   }
+  if(S.sheet==='share'){
+    const t=shareText();
+    sheet.innerHTML=`<h3>📤 傳給家人<button data-a="close">關閉</button></h3>
+    <img id="shimg" alt="" style="width:100%;border-radius:14px;display:block;margin-bottom:12px">
+    <div class="actions" style="margin:0 0 8px"><button class="btn" data-a="shimgsave">🖼️ 存成圖片</button><button class="btn sec" data-a="shcopy">📋 複製文字</button></div>
+    <div class="hint">圖片存不了的話，直接截圖這張卡片也可以。文字可以貼到 LINE。</div>
+    <textarea class="cp" id="shtxt" readonly style="height:150px;margin-top:10px">${esc(t)}</textarea>`;
+    try{document.getElementById('shimg').src=shareCanvas().toDataURL('image/png')}catch(_){}
+    return;
+  }
   if(S.sheet==='visit'){
     S._copy=visitSummary();
     sheet.innerHTML=`<h3>🩺 回診摘要<button data-a="close">關閉</button></h3><textarea class="cp" readonly style="height:340px">${esc(S._copy)}</textarea>
@@ -654,6 +689,7 @@ document.getElementById('app').addEventListener('click',e=>{
   else if(act==='next'){if(S.view<today){S.view=addDays(S.view,1);render()}}
   else if(act==='today'){S.view=today;render()}
   else if(act==='settings')openSheet('settings');
+  else if(act==='share'){if(nextInfo())openSheet('share');else toast('還沒有餵奶紀錄')}
   else if(act==='target'){S._tg=num(S.cfg.target)||130;openSheet('target')}
   else if(act==='stats')openSheet('stats');
   else if(act==='copy')copyText(dayText(S.view));
@@ -722,6 +758,14 @@ sheet.addEventListener('click',async e=>{
   }
   if(act==='csv'){copyText(csvAll());return}
   if(act==='visit'){openSheet('visit');return}
+  if(act==='shcopy'){const t=shareText();try{await navigator.clipboard.writeText(t);toast('已複製，可以貼到 LINE')}catch(_){const ta=document.getElementById('shtxt');ta.focus();ta.select();toast('已全選，長按複製')}return}
+  if(act==='shimgsave'){
+    const c=shareCanvas(),fn='下次餵奶_'+hm(nextInfo().A).replace(':','')+'.png';
+    try{const blob=await new Promise(r=>c.toBlob(r,'image/png'));const f=new File([blob],fn,{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}catch(e){if(e&&e.name==='AbortError')return}
+    try{const a2=document.createElement('a');a2.href=c.toDataURL('image/png');a2.download=fn;document.body.appendChild(a2);a2.click();a2.remove();toast('已下載圖片')}catch(_){toast('存不了，請直接截圖上面的卡片')}
+    return;
+  }
   if(act==='import'){openSheet('import');return}
   if(act==='doimport'){
     const raw=document.getElementById('imp').value.trim().replace(/^\uFEFF/,'');let o;try{o=JSON.parse(raw)}catch(_){toast(raw.length?'內容不完整（只收到 '+raw.length+' 字），請重新複製這一段':'還沒貼上內容');return}
