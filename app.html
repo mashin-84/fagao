@@ -160,7 +160,10 @@ textarea.cp{width:100%;height:240px;font-size:14px;border-radius:10px;border:1px
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div id="boot" style="padding:20px;color:#8a8178;font-size:14px">載入中…（v6）</div></div>
+<script>
+window.addEventListener('error',e=>{try{const d=document.getElementById('app');if(d&&!d.dataset.err){d.dataset.err=1;d.innerHTML=('<div style="background:#c0392b;color:#fff;padding:10px 12px;border-radius:10px;margin-bottom:10px;font-size:13px;word-break:break-all">畫面出錯了，請截圖給 Claude：<br>'+String(e.message).replace(/</g,'&lt;')+' (line '+e.lineno+')</div>')}}catch(_){}});
+</script>
 <div class="bar" id="bar">
   <button class="b-feed" data-open="feed"><span>🍼</span>喝奶</button>
   <button class="b-pee" data-open="pee"><span>💧</span>尿尿</button>
@@ -171,7 +174,6 @@ textarea.cp{width:100%;height:240px;font-size:14px;border-radius:10px;border:1px
 <div class="toast" id="toast"></div>
 
 <script>
-window.addEventListener('error',e=>{try{const d=document.getElementById('app');if(d&&!d.dataset.err){d.dataset.err=1;d.insertAdjacentHTML('afterbegin','<div style="background:#c0392b;color:#fff;padding:10px 12px;border-radius:10px;margin-bottom:10px;font-size:13px;word-break:break-all">畫面出錯了，請截圖給 Claude：<br>'+String(e.message).replace(/</g,'&lt;')+' (line '+e.lineno+')</div>')}}catch(_){}});
 // ---------- constants ----------
 const FEED_M = {breast:'親餵', bm:'瓶餵母乳', formula:'配方奶'};
 const PC = [['meco','黑綠(胎便)','#2f3a24'],['yellow','黃','#e8c547'],['gold','金黃','#d39a17'],['yg','黃綠','#a8b832'],['green','綠','#6b8e23'],['dg','深綠','#2e6b34'],['brown','褐','#8b5a2b'],['pale','淡黃/灰白','#e9e2c4',1],['blood','帶血/紅','#b22222',1],['black','黑(非胎便)','#1d1a17',1]];
