@@ -27,9 +27,10 @@ f.addEventListener('load',()=>setTimeout(()=>ld.classList.add('hide'),400));
 addEventListener('message',async e=>{
   const d=e.data;if(!d||d.type!=='fagao-share')return;
   try{e.source&&e.source.postMessage({type:'fagao-share-ok'},'*')}catch(_){}
+  const dl=()=>{const a=document.createElement('a');a.href=d.dataUrl;a.download=d.filename;document.body.appendChild(a);a.click();a.remove()};
+  if(d.mode==='dl'){dl();return}
   try{const b=await (await fetch(d.dataUrl)).blob();const f=new File([b],d.filename,{type:'image/png'});
-    if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});
-    else{const a=document.createElement('a');a.href=d.dataUrl;a.download=d.filename;a.click()}}catch(_){}
+    if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f]});else dl()}catch(err){if(!err||err.name!=='AbortError')dl()}
 });
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>

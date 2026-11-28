@@ -41,9 +41,14 @@ input{font:inherit;color:inherit}
 .since .base b{color:var(--ink)}
 .since .nw{white-space:nowrap;display:inline-block}
 .tgbtn{font-size:12px;color:var(--feed);border:1px solid var(--feed);border-radius:999px;padding:2px 9px;margin-left:4px}
-.shimg{display:block;width:100%;max-height:42vh;object-fit:contain;border-radius:14px;margin-bottom:12px}
-.shbtns{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
-.shbtns .btn{flex:none;width:100%;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.shwrap{display:block;width:100%;margin:0 0 14px;text-align:center}
+.shimg{display:inline-block;width:auto;max-width:100%;height:auto;max-height:38vh;border-radius:14px;vertical-align:top}
+.sgrid{display:grid;grid-template-columns:1fr;row-gap:10px;margin:0}
+.sbtn{display:block;box-sizing:border-box;width:100%;height:54px;line-height:54px;margin:0;padding:0 12px;border:0;border-radius:14px;background:var(--chip);color:var(--ink);font-size:17px;font-weight:700;text-align:center;text-decoration:none;white-space:nowrap;overflow:hidden;position:static}
+.sbtn.pri{background:#3d7bd9;color:#fff}
+.sbtn.line{background:#06c755;color:#fff}
+.sbtn.ghost{background:transparent;color:var(--mute);font-weight:500;height:44px;line-height:44px}
+.shhint{margin:12px 0 0}
 .btn.line{background:#06c755;color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none}
 .sharebtn{align-self:flex-start;font-size:13px;color:var(--feed);border:1px solid var(--feed);border-radius:999px;padding:5px 12px}
 .since .why{display:block;font-size:12px;margin-top:2px}
@@ -630,16 +635,16 @@ function renderSheet(){
   }
   if(S.sheet==='share'){
     const t=shareText();
+    const sub=S._shsub||'';
+    const btns=sub==='img'?`<button class="sbtn pri" data-a="shimg" data-v="share">📤 分享（LINE 等）</button><button class="sbtn" data-a="shimg" data-v="dl">⬇️ 下載圖片</button><button class="sbtn ghost" data-a="shsub" data-v="">← 返回</button>`
+      :sub==='txt'?`<a class="sbtn line" href="https://line.me/R/msg/text/?${encodeURIComponent(t)}" target="_blank" rel="noopener">💬 用 LINE 傳</a><button class="sbtn" data-a="shcopy">📋 複製文字</button><button class="sbtn ghost" data-a="shsub" data-v="">← 返回</button>`
+      :`<button class="sbtn pri" data-a="shsub" data-v="img">🖼️ 圖片分享</button><button class="sbtn" data-a="shsub" data-v="txt">💬 文字分享</button>`;
     sheet.innerHTML=`<h3>📤 傳給家人<button data-a="close">關閉</button></h3>
-    <img id="shimg" alt="" class="shimg">
-    <div class="shbtns">
-      <a class="btn line" href="https://line.me/R/msg/text/?${encodeURIComponent(t)}" target="_blank" rel="noopener">💬 用 LINE 傳文字</a>
-      <button class="btn sec" data-a="shimgsave">🖼️ 傳圖片</button>
-      <button class="btn sec" data-a="shcopy">📋 複製文字</button>
-    </div>
+    <div class="shwrap"><img id="shimg" alt="" class="shimg"></div>
+    <div class="sgrid">${btns}</div>
     <textarea class="cp" id="shtxt" readonly style="display:none;height:150px;margin-top:10px">${esc(t)}</textarea>
-    <div class="hint">圖片傳不出去的話，直接截圖上面這張卡片也可以。</div>`;
-    try{document.getElementById('shimg').src=shareCanvas().toDataURL('image/png')}catch(_){}
+    <p class="hint shhint">傳不出去的話，直接截圖上面這張卡片也可以。</p>`;
+    try{document.getElementById('shimg').src=S._shimg||(S._shimg=shareCanvas().toDataURL('image/png'))}catch(_){}
     return;
   }
   if(S.sheet==='visit'){
@@ -697,7 +702,7 @@ document.getElementById('app').addEventListener('click',e=>{
   else if(act==='next'){if(S.view<today){S.view=addDays(S.view,1);render()}}
   else if(act==='today'){S.view=today;render()}
   else if(act==='settings')openSheet('settings');
-  else if(act==='share'){if(nextInfo())openSheet('share');else toast('還沒有餵奶紀錄')}
+  else if(act==='share'){if(nextInfo()){S._shsub='';S._shimg=null;openSheet('share')}else toast('還沒有餵奶紀錄')}
   else if(act==='target'){S._tg=num(S.cfg.target)||130;openSheet('target')}
   else if(act==='stats')openSheet('stats');
   else if(act==='copy')copyText(dayText(S.view));
@@ -767,12 +772,14 @@ sheet.addEventListener('click',async e=>{
   if(act==='csv'){copyText(csvAll());return}
   if(act==='visit'){openSheet('visit');return}
   if(act==='shcopy'){const t=shareText();try{await navigator.clipboard.writeText(t);toast('已複製，可以貼到 LINE')}catch(_){const ta=document.getElementById('shtxt');ta.style.display='block';ta.select();toast('請長按下面的文字複製')}return}
-  if(act==='shimgsave'){
-    const c=shareCanvas(),fn='下次餵奶_'+hm(nextInfo().A).replace(':','')+'.png';
-    if(window.top!==window){const ok=await new Promise(res=>{const h=e=>{if(e.data&&e.data.type==='fagao-share-ok'){removeEventListener('message',h);res(true)}};addEventListener('message',h);setTimeout(()=>{removeEventListener('message',h);res(false)},700);try{window.top.postMessage({type:'fagao-share',dataUrl:c.toDataURL('image/png'),filename:fn,text:shareText()},'*')}catch(_){res(false)}});if(ok)return}
-    try{const blob=await new Promise(r=>c.toBlob(r,'image/png'));const f=new File([blob],fn,{type:'image/png'});
-      if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}catch(e){if(e&&e.name==='AbortError')return}
-    try{const a2=document.createElement('a');a2.href=c.toDataURL('image/png');a2.download=fn;document.body.appendChild(a2);a2.click();a2.remove();toast('已下載圖片')}catch(_){toast('存不了，請直接截圖上面的卡片')}
+  if(act==='shsub'){S._shsub=a.dataset.v;renderSheet();return}
+  if(act==='shimg'){
+    const mode=a.dataset.v,url=S._shimg||shareCanvas().toDataURL('image/png'),fn='下次餵奶_'+hm(nextInfo().A).replace(':','')+'.png';
+    const ok=window.top!==window&&await new Promise(res=>{const h=e=>{if(e.data&&e.data.type==='fagao-share-ok'){removeEventListener('message',h);res(true)}};addEventListener('message',h);setTimeout(()=>{removeEventListener('message',h);res(false)},700);try{window.top.postMessage({type:'fagao-share',mode,dataUrl:url,filename:fn},'*')}catch(_){res(false)}});
+    if(ok){if(mode==='dl')toast('已下載圖片');return}
+    try{if(mode==='share'){const b=await (await fetch(url)).blob();const f=new File([b],fn,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return}}
+      else{const l=document.createElement('a');l.href=url;l.download=fn;document.body.appendChild(l);l.click();l.remove()}}catch(e){if(e&&e.name==='AbortError')return}
+    toast('這裡不能'+(mode==='dl'?'下載':'分享')+'，請從主畫面的「發糕日誌」圖示開啟，或直接截圖卡片');
     return;
   }
   if(act==='import'){openSheet('import');return}
